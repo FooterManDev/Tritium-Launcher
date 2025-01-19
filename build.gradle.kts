@@ -33,6 +33,10 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:$ktor")
             implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor")
             implementation("io.ktor:ktor-client-serialization:$ktor")
+            implementation("com.akuleshov7:ktoml-core:0.5.1")
+            implementation("com.akuleshov7:ktoml-file:0.5.1")
         }
     }
+
+    
 }
