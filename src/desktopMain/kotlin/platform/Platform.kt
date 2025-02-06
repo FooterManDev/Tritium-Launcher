@@ -9,7 +9,7 @@ object Platform {
     val userHome: String = System.getProperty("user.home")
     val tempDir: File = File(System.getProperty("java.io.tmpdir"))
 
-    val sysConfigDir: File by lazy {
+    val sysSettingsDir: File by lazy {
         when {
             osName.contains("win") ->
                 File(System.getenv("APPDATA") ?: "$userHome\\AppData\\Roaming")
@@ -20,8 +20,8 @@ object Platform {
         }
     }
 
-    fun getConfigDir(): File {
-        val dir = File(sysConfigDir, Constants.TR)
+    fun getSettingsDir(): File {
+        val dir = File(sysSettingsDir, Constants.TR)
         if(!dir.exists()) dir.mkdirs()
         return dir
     }
