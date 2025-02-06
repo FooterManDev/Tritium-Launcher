@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/FooterManDev/Tritium-Launcher/refs/heads/master/src/commonMain/resources/images/icon.png" alt="Description" width="100" height="100">
+</div>    
+ 
 # Tritium Launcher
 
 This will eventually become a Minecraft Launcher built for Modpack Developers styled as an IDE, implementing features such as:
