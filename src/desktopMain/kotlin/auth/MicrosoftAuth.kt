@@ -12,14 +12,24 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import toURI
 import java.awt.Desktop
 import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
 import javax.swing.JOptionPane
 
 object MicrosoftAuth {
+    private const val KEYSET_FILENAME = "keyset.bin"
+    private const val TOKEN_FILENAME = "token.bin"
+    private lateinit var secretKey: SecretKey
+
     private val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json)
@@ -33,7 +43,64 @@ object MicrosoftAuth {
     private const val XSTS_AUTH_URL = "https://xsts.auth.xboxlive.com/xsts/authorize"
     private const val MC_PROFILE_URL = "https://api.minecraftservices.com/minecraft/profile"
 
-    suspend fun auth(): MCProfile? {
+    init {
+        val keysetPath = Paths.get(KEYSET_FILENAME)
+        if (Files.exists(keysetPath)) {
+            FileInputStream(KEYSET_FILENAME).use { stream ->
+                val encoded = stream.readAllBytes()
+                secretKey = SecretKeySpec(encoded, "AES")
+            }
+        } else {
+            val keyGen = KeyGenerator.getInstance("AES")
+            keyGen.init(128)
+            secretKey = keyGen.generateKey()
+            FileOutputStream(KEYSET_FILENAME).use { stream ->
+                stream.write(secretKey.encoded)
+            }
+        }
+    }
+
+    private fun encryptToken(token: String): String {
+        val cipher = Cipher.getInstance("AES")
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+        val encryptedBytes = cipher.doFinal(token.toByteArray())
+        return Base64.getEncoder().encodeToString(encryptedBytes)
+    }
+
+    private fun decryptToken(encryptedToken: String): String {
+        val cipher = Cipher.getInstance("AES")
+        cipher.init(Cipher.DECRYPT_MODE, secretKey)
+        val encryptedBytes = Base64.getDecoder().decode(encryptedToken)
+        val decryptedBytes = cipher.doFinal(encryptedBytes)
+        return String(decryptedBytes)
+    }
+
+    private fun saveToken(token: String) {
+        val encrypted = encryptToken(token)
+        Files.write(Paths.get(TOKEN_FILENAME), encrypted.toByteArray(Charsets.UTF_8))
+    }
+
+    private fun loadToken(): String? {
+        val path = Paths.get(TOKEN_FILENAME)
+        return if(Files.exists(path)) {
+            val encrypted = Files.readAllBytes(path)
+            decryptToken(String(encrypted, Charsets.UTF_8))
+        } else null
+    }
+
+    suspend fun getMCProfile(): MCProfile? {
+        val token = loadToken()
+        if(token != null) {
+            println("Loading saved token.")
+            val profile = fetchMCProfile(token)
+            if(profile != null) return profile else println("Saved token invalid or expired.")
+        }
+
+        return signIn()
+    }
+
+    private suspend fun signIn(): MCProfile? {
+
         val deviceCodeResp = getDeviceCode()
         showVerificationInstructions(deviceCodeResp.verificationUri, deviceCodeResp.userCode)
 
@@ -41,7 +108,9 @@ object MicrosoftAuth {
         val (xblToken, hash) = authWithLive(token)
         val xstsToken = authWithXSTS(xblToken)
         val mcToken = getMCToken(xstsToken, hash)
-        return fetchMCProfile(mcToken)
+        val profile = fetchMCProfile(mcToken)
+        if(profile != null) saveToken(mcToken)
+        return profile
     }
 
     private suspend fun getDeviceCode(): DeviceCodeResponse {
@@ -73,8 +142,8 @@ object MicrosoftAuth {
             null,
             "1. Open the URL in your browser: $verificationUri\n" +
             "2. Enter the code: $userCode\n" +
-            "3. Log into your MS account.",
-            "Device Authentication",
+            "3. Log into your MS account.", // Message
+            "Device Authentication", // Title
             JOptionPane.INFORMATION_MESSAGE
         )
     }
