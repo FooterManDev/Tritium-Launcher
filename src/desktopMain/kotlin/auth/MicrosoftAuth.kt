@@ -1,6 +1,8 @@
 package auth
 
 import Constants.CLIENT_ID
+import auth.MicrosoftAuth.getMCProfile
+import auth.MicrosoftAuth.isSignedIn
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -12,23 +14,31 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import toURI
 import java.awt.Desktop
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
 import javax.swing.JOptionPane
 
+/**
+ * Contains all logic for Minecraft authentication.
+ *
+ * @property isSignedIn Whether the user is signed in
+ *
+ * @property getMCProfile Get the user's [MCProfile]
+ *
+ * TODO: Clean up
+ */
 object MicrosoftAuth {
-    private const val KEYSET_FILENAME = "keyset.bin"
-    private const val TOKEN_FILENAME = "token.bin"
-    private lateinit var secretKey: SecretKey
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private const val TOKEN_FILE = "token.bin"
+    private const val REFRESH_TOKEN_FILENAME = "refresh_token.bin"
+
+    private const val REFRESH_BUFFER_MS = 60 * 1000L
 
     private val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -37,80 +47,178 @@ object MicrosoftAuth {
     }
     private val json = Json { ignoreUnknownKeys = true }
 
+    @Volatile private var tokenExpiryTime: Long = 0L
+    @Volatile private var _isSignedIn = false
+    val isSignedIn: Boolean get() = _isSignedIn
+
     private const val DEVICE_CODE_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode"
     private const val TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
     private const val XBL_AUTH_URL = "https://user.auth.xboxlive.com/user/authenticate"
     private const val XSTS_AUTH_URL = "https://xsts.auth.xboxlive.com/xsts/authorize"
     private const val MC_PROFILE_URL = "https://api.minecraftservices.com/minecraft/profile"
 
-    init {
-        val keysetPath = Paths.get(KEYSET_FILENAME)
-        if (Files.exists(keysetPath)) {
-            FileInputStream(KEYSET_FILENAME).use { stream ->
-                val encoded = stream.readAllBytes()
-                secretKey = SecretKeySpec(encoded, "AES")
-            }
-        } else {
-            val keyGen = KeyGenerator.getInstance("AES")
-            keyGen.init(128)
-            secretKey = keyGen.generateKey()
-            FileOutputStream(KEYSET_FILENAME).use { stream ->
-                stream.write(secretKey.encoded)
-            }
+    private fun saveToken(token: String) {
+        try {
+            val encrypted = CryptoMngr.encrypt(token)
+            Files.write(Paths.get(TOKEN_FILE), encrypted.toByteArray(StandardCharsets.UTF_8))
+            logger.info("Access token saved.")
+        } catch (e: Exception) {
+            logger.error("Failed to save access token: ${e.message}", e)
+            throw e
         }
     }
 
-    private fun encryptToken(token: String): String {
-        val cipher = Cipher.getInstance("AES")
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-        val encryptedBytes = cipher.doFinal(token.toByteArray())
-        return Base64.getEncoder().encodeToString(encryptedBytes)
-    }
-
-    private fun decryptToken(encryptedToken: String): String {
-        val cipher = Cipher.getInstance("AES")
-        cipher.init(Cipher.DECRYPT_MODE, secretKey)
-        val encryptedBytes = Base64.getDecoder().decode(encryptedToken)
-        val decryptedBytes = cipher.doFinal(encryptedBytes)
-        return String(decryptedBytes)
-    }
-
-    private fun saveToken(token: String) {
-        val encrypted = encryptToken(token)
-        Files.write(Paths.get(TOKEN_FILENAME), encrypted.toByteArray(Charsets.UTF_8))
-    }
-
     private fun loadToken(): String? {
-        val path = Paths.get(TOKEN_FILENAME)
-        return if(Files.exists(path)) {
-            val encrypted = Files.readAllBytes(path)
-            decryptToken(String(encrypted, Charsets.UTF_8))
-        } else null
+        return try {
+            if (Files.exists(Paths.get(TOKEN_FILE))) {
+                val encrypted = String(Files.readAllBytes(Paths.get(TOKEN_FILE)), StandardCharsets.UTF_8)
+                val token = CryptoMngr.decrypt(encrypted)
+                logger.info("Access token loaded.")
+                token
+            } else null
+        } catch (e: Exception) {
+            logger.error("Failed to load access token: ${e.message}", e)
+            null
+        }
+    }
+
+    private fun deleteToken() {
+        try {
+            Files.deleteIfExists(Paths.get(TOKEN_FILE))
+            logger.info("Access token deleted.")
+        } catch (e: Exception) {
+            logger.error("Error deleting access token: ${e.message}", e)
+        }
+    }
+
+    private fun saveRefreshToken(token: String) {
+        try {
+            val encrypted = CryptoMngr.encrypt(token)
+            Files.write(Paths.get(REFRESH_TOKEN_FILENAME), encrypted.toByteArray(StandardCharsets.UTF_8))
+            logger.info("Refresh token saved.")
+        } catch (e: Exception) {
+            logger.error("Failed to save refresh token: ${e.message}", e)
+            throw e
+        }
+    }
+
+    private fun loadRefreshToken(): String? {
+        return try {
+            if (Files.exists(Paths.get(REFRESH_TOKEN_FILENAME))) {
+                val encrypted = String(Files.readAllBytes(Paths.get(REFRESH_TOKEN_FILENAME)), StandardCharsets.UTF_8)
+                val token = CryptoMngr.decrypt(encrypted)
+                logger.info("Refresh token loaded.")
+                token
+            } else null
+        } catch (e: Exception) {
+            logger.error("Failed to load refresh token: ${e.message}", e)
+            null
+        }
+    }
+
+    private fun deleteRefreshToken() {
+        try {
+            Files.deleteIfExists(Paths.get(REFRESH_TOKEN_FILENAME))
+        } catch (e: Exception) {
+            logger.error("Error deleting refresh token: ${e.message}", e)
+        }
     }
 
     suspend fun getMCProfile(): MCProfile? {
         val token = loadToken()
-        if(token != null) {
-            println("Loading saved token.")
-            val profile = fetchMCProfile(token)
-            if(profile != null) return profile else println("Saved token invalid or expired.")
-        }
-
-        return signIn()
+        return if(token != null) {
+            fetchMCProfile(token)
+        } else null
     }
 
-    private suspend fun signIn(): MCProfile? {
+    suspend fun getMCProfileWithUUID(uuid: String): MCPlayerInfo? {
+        val response = httpClient.get("https://sessionserver.mojang.com/session/minecraft/profile/$uuid")
+        return json.decodeFromString(response.bodyAsText())
+    }
 
-        val deviceCodeResp = getDeviceCode()
-        showVerificationInstructions(deviceCodeResp.verificationUri, deviceCodeResp.userCode)
+    suspend fun signIn(onSignedIn: (MCProfile?) -> Unit) {
+        try {
+            logger.info("Starting sign-in flow...")
+            val deviceCodeResp = getDeviceCode()
+            showVerificationInstructions(deviceCodeResp.verificationUri, deviceCodeResp.userCode)
 
-        val token = pollForAccessToken(deviceCodeResp)
-        val (xblToken, hash) = authWithLive(token)
-        val xstsToken = authWithXSTS(xblToken)
-        val mcToken = getMCToken(xstsToken, hash)
-        val profile = fetchMCProfile(mcToken)
-        if(profile != null) saveToken(mcToken)
-        return profile
+            val tokenResponse = pollForAccessToken(deviceCodeResp)
+
+            val (xblToken, hash) = authWithLive(tokenResponse.accessToken)
+            val xstsToken = authWithXSTS(xblToken)
+
+            val mcToken = getMCToken(xstsToken, hash)
+
+            saveToken(mcToken)
+            tokenResponse.refreshToken?.let {
+                saveRefreshToken(it)
+            }
+
+            tokenExpiryTime = System.currentTimeMillis() + (tokenResponse.expiresIn.takeIf { it > 0 } ?: 3600) * 1000L
+            _isSignedIn = true
+
+            logger.info("Sign-in successful. Token expires in ${tokenResponse.expiresIn} seconds.")
+            val profile = fetchMCProfile(mcToken)
+            onSignedIn(profile)
+        } catch (e: Exception) {
+            logger.error("Sign-in failed: ${e.message}", e)
+            signOut()
+            throw e
+        }
+    }
+
+    suspend fun ensureValidAccessToken(): String {
+        val currentToken = loadToken() ?: throw IllegalStateException("No access token; sign in required.")
+        if(System.currentTimeMillis() >= tokenExpiryTime - REFRESH_BUFFER_MS) {
+            logger.info("Access token near expiry; refreshing.")
+            return refreshAccessTokenIfNeeded()
+        }
+        return currentToken
+    }
+
+    suspend fun refreshAccessTokenIfNeeded(): String {
+        val storedRefresh = loadRefreshToken() ?: throw IllegalStateException("No refresh token; sign in required.")
+        return try {
+            refreshAccessToken(storedRefresh)
+        } catch (e: Exception) {
+            logger.error("Token refresh error: ${e.message}", e)
+            deleteToken()
+            deleteRefreshToken()
+            _isSignedIn = false
+            throw Exception("Token refresh failed; try sign in again.", e)
+        }
+    }
+
+    private suspend fun refreshAccessToken(refreshToken: String): String {
+        val params = listOf(
+            "client_id" to CLIENT_ID,
+            "grant_type" to "refresh_token",
+            "refresh_token" to refreshToken,
+            "scope" to "XboxLive.signin offline_access"
+        ).formUrlEncode()
+
+        logger.info("Requesting new access token via refresh token.")
+        val response: HttpResponse = try {
+            httpClient.post(TOKEN_URL) {
+                contentType(ContentType.Application.FormUrlEncoded)
+                setBody(params)
+            }
+        } catch (e: Exception) {
+            throw Exception("Network error during token refresh: ${e.message}", e)
+        }
+        val body = response.bodyAsText()
+        if(response.status == HttpStatusCode.OK) {
+            val tokenResponse: TokenResponse = try {
+                json.decodeFromString(TokenResponse.serializer(), body)
+            } catch (e: Exception) {
+                throw Exception("Failed to parse token refresh response: ${e.message}", e)
+            }
+            tokenExpiryTime = System.currentTimeMillis() + tokenResponse.expiresIn * 1000L
+            saveToken(tokenResponse.accessToken)
+            tokenResponse.refreshToken?.let { saveRefreshToken(it) }
+            logger.info("Token refresh successful; new token expires in ${tokenResponse.expiresIn} seconds.")
+            return tokenResponse.accessToken
+        } else throw Exception("Token refresh failed with status ${response.status.value}: $body")
     }
 
     private suspend fun getDeviceCode(): DeviceCodeResponse {
@@ -125,7 +233,6 @@ object MicrosoftAuth {
         }
 
         val body = response.bodyAsText()
-        println(body)
 
         if(response.status.value != 200) {
             throw IllegalStateException("Failed to get device code: $body")
@@ -148,35 +255,54 @@ object MicrosoftAuth {
         )
     }
 
-    private suspend fun pollForAccessToken(code: DeviceCodeResponse): String {
+    private suspend fun pollForAccessToken(code: DeviceCodeResponse): TokenResponse {
         val interval = code.interval * 1000L
         while(true) {
             delay(interval)
 
-            val response: HttpResponse = httpClient.post(TOKEN_URL) {
-                contentType(ContentType.Application.FormUrlEncoded)
-                setBody(
-                    listOf(
-                        "client_id" to CLIENT_ID,
-                        "grant_type" to "urn:ietf:params:oauth:grant-type:device_code",
-                        "device_code" to code.deviceCode,
-                        "scope" to "XboxLive.signin offline_access"
-                    ).formUrlEncode()
-                )
+            val response: HttpResponse = try {
+                httpClient.post(TOKEN_URL) {
+                    contentType(ContentType.Application.FormUrlEncoded)
+                    setBody(
+                        listOf(
+                            "client_id" to CLIENT_ID,
+                            "grant_type" to "urn:ietf:params:oauth:grant-type:device_code",
+                            "device_code" to code.deviceCode,
+                            "scope" to "XboxLive.signin offline_access"
+                        ).formUrlEncode()
+                    )
+                }
+            } catch (e: Exception) {
+                logger.error("Network error while polling for token: ${e.message}", e)
+                continue
             }
-
-            println(response.bodyAsText())
-
+            val body = response.bodyAsText()
             if(response.status == HttpStatusCode.OK) {
-                val tokenResponse: TokenResponse = json.decodeFromString(response.bodyAsText())
-                return tokenResponse.accessToken
-            }
-
-            if(response.status == HttpStatusCode.BadRequest) {
-                val errorResponse = json.decodeFromString<DeviceCodeErrorResponse>(response.bodyAsText())
+                val tokenResponse: TokenResponse = try {
+                    json.decodeFromString(body)
+                } catch (e: Exception) {
+                    logger.error("Error parsing token response: ${e.message}", e)
+                    throw Exception("Failed to parse token response", e)
+                }
+                logger.info("Token acquired successfully. Expires in ${tokenResponse.expiresIn} seconds.")
+                return tokenResponse
+            } else if(response.status == HttpStatusCode.BadRequest) {
+                val errorResponse = try {
+                    json.decodeFromString<DeviceCodeErrorResponse>(response.bodyAsText())
+                } catch (e: Exception) {
+                    logger.error("Error parsing error response: ${e.message}", e)
+                    throw Exception("Failed to parse error response", e)
+                }
                 if(errorResponse.error == "authorization_pending") {
+                    logger.info("Authorization pending, continuing to poll...")
                     continue
-                } else throw IllegalStateException(errorResponse.error)
+                } else {
+                    logger.error("Error in token polling: ${errorResponse.error}")
+                    throw IllegalStateException(errorResponse.error)
+                }
+            } else {
+                logger.error("Unexpected HTTP status ${response.status.value}: $body")
+                throw IllegalStateException("Unexpected response")
             }
         }
     }
@@ -196,8 +322,6 @@ object MicrosoftAuth {
             contentType(ContentType.Application.Json)
             setBody(responseBody)
         }
-
-        println("fn::authWithLive" + response.bodyAsText())
 
         val xblResponse: XblTokenResponse = json.decodeFromString(response.bodyAsText())
         val xblToken = xblResponse.token
@@ -220,9 +344,6 @@ object MicrosoftAuth {
             setBody(responseBody)
         }
 
-        println(response.status)
-        println("fn::authWithXSTS: ${response.bodyAsText()}")
-
         val xstsResponse: XstsTokenResponse = json.decodeFromString(response.bodyAsText())
         return xstsResponse.token
     }
@@ -235,8 +356,6 @@ object MicrosoftAuth {
             contentType(ContentType.Application.Json)
             setBody(body)
         }
-
-        println("MC Token Response: ${response.status} ${response.bodyAsText()}")
 
         if(response.status != HttpStatusCode.OK) {
             println("MC auth failed!")
@@ -253,15 +372,46 @@ object MicrosoftAuth {
         }
 
         val body = response.bodyAsText()
-        println("Response status: ${response.status}")
-        println("Response body: $body")
-
         return if (response.status == HttpStatusCode.OK) {
-            json.decodeFromString(response.bodyAsText())
+            json.decodeFromString(body)
         } else {
             println("User does not own Minecraft, or other error.")
             null
         }
+    }
+
+    fun signOut() {
+        deleteToken()
+        deleteRefreshToken()
+        _isSignedIn = false
+        logger.info("User signed out.")
+    }
+
+    suspend fun getUUID(name: String): String? {
+        val response: HttpResponse = httpClient.get("https://api.mojang.com/users/profiles/minecraft/$name")
+        return Json.decodeFromString<UUID>(response.bodyAsText()).id
+    }
+
+    suspend fun getSkinAndCapeTextures(uuid: String): Texture? {
+        val profile = getMCProfileWithUUID(uuid)
+        if(profile != null) {
+            val properties = profile.properties
+            if(properties.name == "textures") {
+                val textures = Base64.getDecoder().decode(properties.value).toString(Charsets.UTF_8)
+                return json.decodeFromString<Texture>(textures)
+            }
+        }
+        return null
+    }
+
+    suspend fun getMCSkinUrl(uuid: String): String? {
+        val textures = getSkinAndCapeTextures(uuid)
+        return textures?.textures?.SKIN?.url
+    }
+
+    suspend fun getMCCapeUrl(uuid: String): String? {
+        val textures = getSkinAndCapeTextures(uuid)
+        return textures?.textures?.CAPE?.url
     }
 }
 
@@ -337,7 +487,6 @@ data class Xui(
 @Serializable
 data class MCAuthResponse(
     @SerialName("username") val uuid: String, // this is not the player UUID.
-    @SerialName("roles") val roles: Nothing? = null,
     @SerialName("access_token") val accessToken: String,
     @SerialName("token_type") val tokenType: String,
     @SerialName("expires_in") val expiresIn: Int
@@ -366,4 +515,58 @@ data class Skin(
     val state: String,
     val variant: String,
     @SerialName("alias") val alias: String? = null
+)
+
+@Serializable
+data class UUID(
+    val id: String,
+    val name: String,
+    val legacy: Boolean,
+    val demo: Boolean
+)
+
+@Serializable
+data class MCPlayerInfo(
+    val id: String,
+    val name: String,
+    val legacy: Boolean,
+    val properties: MCPlayerProperties
+)
+
+@Serializable
+data class MCPlayerProperties(
+    val name: String, // The only property that exists is "textures".
+    val signature: String,
+    val value: String // Decoding this value results in the Texture object.
+)
+
+@Serializable
+data class Texture(
+    val timestamp: Int, // Unix time in milliseconds.
+    val profileId: String,
+    val profileName: String,
+    val signatureRequired: Boolean,
+    val textures: Textures
+)
+
+@Serializable
+data class Textures(
+    val SKIN: SkinTexture,
+    val CAPE: CapeTexture
+)
+
+@Serializable
+data class SkinTexture(
+    val url: String,
+    val metadata: SkinModel
+)
+
+@Serializable
+data class CapeTexture(
+    val url: String
+)
+
+@Serializable
+data class SkinModel(
+    val model: String
 )
