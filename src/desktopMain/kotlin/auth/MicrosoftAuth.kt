@@ -125,10 +125,8 @@ object MicrosoftAuth {
     }
 
     suspend fun getMCProfile(): MCProfile? {
-        val token = loadToken()
-        return if(token != null) {
-            fetchMCProfile(token)
-        } else null
+        val token = ensureValidAccessToken()
+        return fetchMCProfile(token)
     }
 
     suspend fun getMCProfileWithUUID(uuid: String): MCPlayerInfo? {
@@ -222,23 +220,37 @@ object MicrosoftAuth {
     }
 
     private suspend fun getDeviceCode(): DeviceCodeResponse {
-        val response: HttpResponse = httpClient.post(DEVICE_CODE_URL) {
-            contentType(ContentType.Application.FormUrlEncoded)
-            setBody(
-                listOf(
-                    "client_id" to CLIENT_ID,
-                    "scope" to "XboxLive.signin offline_access"
-                ).formUrlEncode()
-            )
+        return try {
+            val response: HttpResponse = httpClient.post(DEVICE_CODE_URL) {
+                contentType(ContentType.Application.FormUrlEncoded)
+                setBody(
+                    listOf(
+                        "client_id" to CLIENT_ID,
+                        "scope" to "XboxLive.signin offline_access"
+                    ).formUrlEncode()
+                )
+            }
+
+            if (response.status.value != 200) {
+                val errBody = response.bodyAsText()
+                logger.error("Failed to get device code: $errBody")
+                throw IllegalStateException("Failed to get device code: $errBody")
+            }
+
+            val responseBody = response.bodyAsText()
+            logger.info("Device code response received: ${response.bodyAsText()}")
+            val deviceCodeResponse: DeviceCodeResponse = try {
+                json.decodeFromString(DeviceCodeResponse.serializer(), responseBody)
+            } catch (e: Exception) {
+                logger.error("Failed to parse device code response: ${e.message}", e)
+                throw IllegalStateException("Failed to parse device code response", e)
+            }
+
+            deviceCodeResponse
+        } catch (e: Exception) {
+            logger.error("Error getting device code: ${e.message}", e)
+            throw e
         }
-
-        val body = response.bodyAsText()
-
-        if(response.status.value != 200) {
-            throw IllegalStateException("Failed to get device code: $body")
-        }
-
-        return json.decodeFromString(body)
     }
 
     private fun showVerificationInstructions(verificationUri: String, userCode: String) {
@@ -318,15 +330,34 @@ object MicrosoftAuth {
             TokenType = "JWT"
         )
 
-        val response: HttpResponse = httpClient.post(XBL_AUTH_URL) {
-            contentType(ContentType.Application.Json)
-            setBody(responseBody)
-        }
+        return try {
+            val response: HttpResponse = httpClient.post(XBL_AUTH_URL) {
+                contentType(ContentType.Application.Json)
+                setBody(responseBody)
+            }
 
-        val xblResponse: XblTokenResponse = json.decodeFromString(response.bodyAsText())
-        val xblToken = xblResponse.token
-        val hash = xblResponse.displayClaims.xui.first().userHash
-        return Pair(xblToken, hash)
+            if(response.status != HttpStatusCode.OK) {
+                val errBody = response.bodyAsText()
+                logger.error("XBL authentication failed with HTTP status ${response.status.value}: $errBody")
+                throw IllegalStateException("XBL authentication failed with HTTP status ${response.status.value}")
+            }
+
+            logger.info("XBL auth response received: ${response.bodyAsText()}")
+            val xblResponse: XblTokenResponse = try {
+                json.decodeFromString(XblTokenResponse.serializer(), response.bodyAsText())
+            } catch (e: Exception) {
+                logger.error("Failed to parse XBL auth response: ${e.message}", e)
+                throw IllegalStateException("XBL auth response parsing failed", e)
+            }
+
+            val xblToken = xblResponse.token
+            val hash = xblResponse.displayClaims.xui.first().userHash
+
+            Pair(xblToken, hash)
+        } catch (e: Exception) {
+            logger.error("Error in authWithLive: ${e.message}", e)
+            throw e
+        }
     }
 
     private suspend fun authWithXSTS(token: String): String {
@@ -339,44 +370,91 @@ object MicrosoftAuth {
             TokenType = "JWT"
         )
 
-        val response: HttpResponse = httpClient.post(XSTS_AUTH_URL) {
-            contentType(ContentType.Application.Json)
-            setBody(responseBody)
-        }
+        return try {
+            val response: HttpResponse = httpClient.post(XSTS_AUTH_URL) {
+                contentType(ContentType.Application.Json)
+                setBody(responseBody)
+            }
 
-        val xstsResponse: XstsTokenResponse = json.decodeFromString(response.bodyAsText())
-        return xstsResponse.token
+            if(response.status != HttpStatusCode.OK) {
+                val errBody = response.bodyAsText()
+                logger.error("XSTS authentication failed with HTTP status ${response.status.value}: $errBody")
+                throw IllegalStateException("XSTS authentication failed with HTTP status ${response.status.value}")
+            }
+
+            logger.info("XSTS auth response received: ${response.bodyAsText()}")
+            val xstsResponse: XstsTokenResponse = try {
+                json.decodeFromString(XstsTokenResponse.serializer(), response.bodyAsText())
+            } catch (e: Exception) {
+                logger.error("Failed to parse XSTS auth response: ${e.message}", e)
+                throw IllegalStateException("XSTS auth response parsing failed", e)
+            }
+
+            xstsResponse.token
+        } catch (e: Exception) {
+            logger.error("Error in authWithXSTS: ${e.message}", e)
+            throw e
+        }
     }
 
     private suspend fun getMCToken(token: String, hash: String): String {
         val identity = "XBL3.0 x=$hash;$token"
         val body = mapOf("identityToken" to identity)
 
-        val response: HttpResponse = httpClient.post("https://api.minecraftservices.com/authentication/login_with_xbox") {
-            contentType(ContentType.Application.Json)
-            setBody(body)
-        }
+        return try {
+            val response: HttpResponse =
+                httpClient.post("https://api.minecraftservices.com/authentication/login_with_xbox") {
+                    contentType(ContentType.Application.Json)
+                    setBody(body)
+                }
 
-        if(response.status != HttpStatusCode.OK) {
-            println("MC auth failed!")
-            throw IllegalStateException("MC auth failed.")
-        }
+            if (response.status != HttpStatusCode.OK) {
+                val errBody = response.bodyAsText()
+                logger.error("MC authentication failed with HTTP status ${response.status.value}: $errBody")
+                throw IllegalStateException("MC authentication failed with HTTP status ${response.status.value}")
+            }
 
-        val authResponse: MCAuthResponse = json.decodeFromString(response.bodyAsText())
-        return authResponse.accessToken
+            val responseBody = response.bodyAsText()
+            logger.info("MC auth response received: $responseBody")
+            val authResponse: MCAuthResponse = try {
+                json.decodeFromString(MCAuthResponse.serializer(), responseBody)
+            } catch (e: Exception) {
+                logger.error("Failed to parse MC auth response: ${e.message}", e)
+                throw IllegalStateException("MC auth response parsing failed", e)
+            }
+
+            authResponse.accessToken
+        } catch (e: Exception) {
+            logger.error("Error in getMCToken: ${e.message}", e)
+            throw e
+        }
     }
 
     private suspend fun fetchMCProfile(token: String): MCProfile? {
-        val response: HttpResponse = httpClient.get(MC_PROFILE_URL) {
-            header("Authorization", "Bearer $token")
-        }
+        return try {
+            val response: HttpResponse = httpClient.get(MC_PROFILE_URL) {
+                header("Authorization", "Bearer $token")
+            }
 
-        val body = response.bodyAsText()
-        return if (response.status == HttpStatusCode.OK) {
-            json.decodeFromString(body)
-        } else {
-            println("User does not own Minecraft, or other error.")
-            null
+            if(response.status != HttpStatusCode.OK) {
+                val errBody = response.bodyAsText()
+                logger.error("MC profile fetch failed with HTTP status ${response.status.value}: $errBody")
+                throw IllegalStateException("MC profile fetch failed with HTTP status ${response.status.value}")
+            }
+
+            val responseBody = response.bodyAsText()
+            logger.info("MC profile response received: $responseBody")
+            val profileResponse: MCProfile = try {
+                json.decodeFromString(MCProfile.serializer(), responseBody)
+            } catch (e: Exception) {
+                logger.error("Failed to parse MC profile response: ${e.message}", e)
+                throw IllegalStateException("MC profile response parsing failed", e)
+            }
+
+            profileResponse
+        } catch (e: Exception) {
+            logger.error("Error in fetchMCProfile: ${e.message}", e)
+            throw e
         }
     }
 
@@ -388,8 +466,13 @@ object MicrosoftAuth {
     }
 
     suspend fun getUUID(name: String): String? {
-        val response: HttpResponse = httpClient.get("https://api.mojang.com/users/profiles/minecraft/$name")
-        return Json.decodeFromString<UUID>(response.bodyAsText()).id
+        try {
+            val response: HttpResponse = httpClient.get("https://api.mojang.com/users/profiles/minecraft/$name")
+            return Json.decodeFromString<UUID>(response.bodyAsText()).id
+        } catch (e: Exception) {
+            logger.error("Error getting UUID: ${e.message}", e)
+            return null
+        }
     }
 
     suspend fun getSkinAndCapeTextures(uuid: String): Texture? {
@@ -401,17 +484,28 @@ object MicrosoftAuth {
                 return json.decodeFromString<Texture>(textures)
             }
         }
+        logger.error("Error getting skin and cape textures")
         return null
     }
 
     suspend fun getMCSkinUrl(uuid: String): String? {
-        val textures = getSkinAndCapeTextures(uuid)
-        return textures?.textures?.SKIN?.url
+        try {
+            val textures = getSkinAndCapeTextures(uuid)
+            return textures?.textures?.SKIN?.url
+        } catch (e: Exception) {
+            logger.error("Error getting skin URL: ${e.message}", e)
+            return null
+        }
     }
 
     suspend fun getMCCapeUrl(uuid: String): String? {
-        val textures = getSkinAndCapeTextures(uuid)
-        return textures?.textures?.CAPE?.url
+        try {
+            val textures = getSkinAndCapeTextures(uuid)
+            return textures?.textures?.CAPE?.url
+        } catch (e: Exception) {
+            logger.error("Error getting cape URL: ${e.message}", e)
+            return null
+        }
     }
 }
 
