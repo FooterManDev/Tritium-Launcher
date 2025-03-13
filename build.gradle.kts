@@ -19,35 +19,36 @@ kotlin {
         val desktopMain by getting
 
         commonMain.dependencies {
-            implementation(kotlin("stdlib-common"))
+            implementation(libs.kotlin.stdlib.common)
         }
         desktopMain.dependencies {
-            implementation(kotlin("stdlib-jdk8"))
-            implementation("com.formdev:flatlaf:3.5.4")
+            // Kotlin standard library
+            implementation(libs.kotlin.stdlib.jdk8)
 
-            // TODO: Move version values to central location
+            // FlatLaf
+            implementation(libs.flatlaf)
 
             // Ktor
-            val ktor = "3.0.3"
-            implementation("io.ktor:ktor-client-core:$ktor")
-            implementation("io.ktor:ktor-client-cio:$ktor")
-            implementation("io.ktor:ktor-client-auth:$ktor")
-            implementation("io.ktor:ktor-client-json:$ktor")
-            implementation("io.ktor:ktor-client-logging:$ktor")
-            implementation("io.ktor:ktor-client-content-negotiation:$ktor")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor")
-            implementation("io.ktor:ktor-client-serialization:$ktor")
+            val ktor = libs.ktor
+            implementation(ktor.client.core)
+            implementation(ktor.client.cio)
+            implementation(ktor.client.auth)
+            implementation(ktor.client.json)
+            implementation(ktor.client.logging)
+            implementation(ktor.client.content.negotiation)
+            implementation(ktor.client.serialization)
+            implementation(ktor.serialization.kotlinx.json)
 
             // Toml serialization
-            val kToml = "0.5.1"
-            implementation("com.akuleshov7:ktoml-core:$kToml")
-            implementation("com.akuleshov7:ktoml-file:$kToml")
+            val kToml = libs.ktoml
+            implementation(kToml.core)
+            implementation(kToml.file)
 
             // MSAL4j
-            val msal = "1.19.0"
-            implementation("com.microsoft.azure:msal4j:$msal")
+            implementation(libs.msal4j)
 
-            implementation("ch.qos.logback:logback-classic:1.5.16") // Deals with a warning during launch that stalls the launcher.
+            // Logback
+            implementation(libs.logback.classic)
         }
     }
 }
