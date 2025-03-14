@@ -27,6 +27,7 @@ kotlin {
 
             // FlatLaf
             implementation(libs.flatlaf)
+            implementation(libs.flatlaf.extras)
 
             // Ktor
             val ktor = libs.ktor
