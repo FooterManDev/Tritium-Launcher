@@ -1,29 +1,28 @@
+package io.github.footermandev.tritium
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.*
 import java.awt.geom.RoundRectangle2D
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
-import java.net.URL
 import javax.imageio.ImageIO
 import javax.swing.ImageIcon
+import javax.swing.border.EmptyBorder
 
-private val logger = LoggerFactory.getLogger("GlobalFunctions") //TODO: Make a central logger for things like this and others
+private val logger = LoggerFactory.getLogger("GlobalFunctions") //TODO: Make a central io.github.footermandev.tritium.logger for things like this and others
 
 /**
  * Shortens [Dimension] creation
  */
 fun dim(width: Int, height: Int) = Dimension(width, height)
 
-/**
- * Sizes a provided image
- */
-fun sizedImg(img: URL?, width: Int, height: Int): ImageIcon {
-    val image = ImageIcon(img).image
-    val resized = image.getScaledInstance(width, height, Image.SCALE_SMOOTH)
+fun sizedImg(img: Image, width: Int, height: Int): ImageIcon {
+    val resized = img.getScaledInstance(width, height, Image.SCALE_SMOOTH)
     return ImageIcon(resized)
 }
 
@@ -52,7 +51,7 @@ fun fromHome(child: String): File {
  * Returns File from ~/.tritium
  */
 fun fromTR(child: String = ""): File {
-    return File(fromHome(".tritium"), child)
+    return File(fromHome("tritium"), child)
 }
 
 /**
@@ -177,9 +176,14 @@ fun loadImage(url: String, width: Int? = null, height: Int? = null, border: Bool
 }
 
 /**
- * Simplifies the Insets constructor.
+ * Simplifies the [Insets] constructor.
  */
 fun insets(all: Int) = Insets(all, all, all, all)
+
+/**
+ * Simplifies the [javax.swing.border.EmptyBorder] constructor
+ */
+fun emptyBorder(all: Int) = EmptyBorder(all, all, all, all)
 
 fun roundImage(image: Image, radius: Int): BufferedImage {
     val w = image.getWidth(null)
@@ -191,4 +195,31 @@ fun roundImage(image: Image, radius: Int): BufferedImage {
     g2d.drawImage(image, 0, 0, null)
     g2d.dispose()
     return img
+}
+
+/**
+ * Makes a quick [Logger] with the name of the class it is created in.
+ */
+fun Any.logger(): Logger {
+    return LoggerFactory.getLogger(this::class.java)
+}
+
+fun compareMCVersions(ver1: String, ver2: String): Boolean {
+    fun parse(v: String): Triple<Int, Int, Int> {
+        val parts = v.split('.')
+        val major = parts[0].toInt()
+        val minor = parts.getOrNull(1)?.toInt() ?: 0
+        val patch = parts.getOrNull(2)?.toInt() ?: 0
+        return Triple(major, minor, patch)
+    }
+
+    val (_, min1, pat1) = parse(ver1)
+    val (_, min2, pat2) = parse(ver2)
+
+    return when {
+        min1 > min2 -> true
+        min1 < min2 -> false
+        pat1 >= pat2 -> true
+        else -> false
+    }
 }
