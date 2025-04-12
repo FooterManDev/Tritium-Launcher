@@ -1,4 +1,4 @@
-package auth
+package io.github.footermandev.tritium.auth
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -51,9 +51,18 @@ object ProfileMngr {
     private const val CAPE_CHANGE_URL = "$MC_API_BASE/minecraft/profile/capes/active"
 
     private val listeners = mutableListOf<(MCProfile?) -> Unit>()
+    private val progressListeners = mutableListOf<(Double) -> Unit>()
 
     fun addListener(listener: (MCProfile?) -> Unit) {
         listeners.add(listener)
+    }
+
+    fun addProgressListener(listener: (Double) -> Unit) {
+        progressListeners.add(listener)
+    }
+
+    private fun notifyProgress(progress: Double) {
+        progressListeners.forEach { it(progress) }
     }
 
     private fun notifyProfileChanged(profile: MCProfile?) {
@@ -73,18 +82,30 @@ object ProfileMngr {
     object Cache {
         private var msToken: String? = null
         private var cachedProfile: MCProfile? = null
+        var isEmpty: Boolean = true
+            private set
+
+        init {
+            addListener { p ->
+                isEmpty = p == null
+            }
+        }
 
         suspend fun init(token: String) = withContext(Dispatchers.IO) {
             msToken = token
             try {
+                notifyProgress(0.2) // Started token validation
                 val profile = fetch(token)
+                notifyProgress(0.6) // Profile fetched
                 if (profile != null) {
                     cachedProfile = profile
                     logger.info("Profile fetched and cached: ${profile.name}")
+                    notifyProgress(0.8) // Profile cached
                 } else logger.error("Failed to fetch MC profile during initialization.")
             } catch (e: Exception) {
                 logger.error("Exception while fetching MC profile: ${e.message}", e)
             }
+            notifyProgress(1.0) // Process complete
             notifyProfileChanged(cachedProfile)
         }
 

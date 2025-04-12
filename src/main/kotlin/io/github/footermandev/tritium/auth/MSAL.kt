@@ -1,9 +1,9 @@
-package auth
+package io.github.footermandev.tritium.auth
 
-import Constants.CLIENT_ID
 import com.microsoft.aad.msal4j.ITokenCacheAccessAspect
 import com.microsoft.aad.msal4j.ITokenCacheAccessContext
 import com.microsoft.aad.msal4j.PublicClientApplication
+import io.github.footermandev.tritium.Constants.CLIENT_ID
 import java.io.File
 
 internal object MSAL {

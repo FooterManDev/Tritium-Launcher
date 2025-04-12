@@ -1,4 +1,4 @@
-package model.serializers
+package io.github.footermandev.tritium.model.serializers
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

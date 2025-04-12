@@ -1,6 +1,6 @@
-package platform
+package io.github.footermandev.tritium.platform
 
-import Constants
+import io.github.footermandev.tritium.Constants
 import java.io.File
 
 @Suppress("MemberVisibilityCanBePrivate")

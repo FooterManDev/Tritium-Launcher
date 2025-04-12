@@ -1,11 +1,11 @@
-package model
+package io.github.footermandev.tritium.model
 
-import fromTR
+import io.github.footermandev.tritium.fromTR
+import io.github.footermandev.tritium.model.serializers.DimensionSerializer
+import io.github.footermandev.tritium.model.serializers.PointSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import model.serializers.DimensionSerializer
-import model.serializers.PointSerializer
 import java.awt.Dimension
 import java.awt.Frame
 import java.awt.Point
