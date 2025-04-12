@@ -26,8 +26,6 @@ fun main(args: Array<String>) {
 
     flatLaf()
 
-    StartupEventMngr.launchAllEvents()
-
     SwingUtilities.invokeLater {
         if(ProjectMngr.activeProject != null) {
             mainLogger.info("Loading active project.")
