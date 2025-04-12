@@ -1,19 +1,33 @@
 [versions]
-kotlin = "2.0.21"
-flatlaf = "3.5.4"
+kotlin = "2.1.20"
+flatlaf = "3.5.3"
+jsvg = "1.7.0"
 ktor = "3.0.3"
 ktoml = "0.5.1"
 msal = "1.19.0"
 logback = "1.5.16"
+ksp = "2.1.20-1.0.31"
+autoservice = "1.1.1"
+autoservice-ksp = "1.2.0"
 
 [libraries]
 # Kotlin
-kotlin-stdlib-common = { module = "org.jetbrains.kotlin:kotlin-stdlib-common", version.ref = "kotlin" }
-kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", version.ref = "kotlin" }
+kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-common", version.ref = "kotlin" }
+kotlin-scripting-host = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm-host", version.ref = "kotlin" }
+kotlin-scripting-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable", version.ref = "kotlin" }
+
+# KSP
+ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+autoservice = { module = "com.google.auto.service:auto-service", version.ref = "autoservice" }
+autoservice-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "autoservice" }
+autoservice-ksp = { module = "dev.zacsweers.autoservice:auto-service-ksp", version.ref = "autoservice-ksp" }
 
 # FlatLaf
 flatlaf = { module = "com.formdev:flatlaf", version.ref = "flatlaf" }
 flatlaf-extras = { module = "com.formdev:flatlaf-extras", version.ref = "flatlaf" }
+jsvg = { module = "com.github.weisj:jsvg", version.ref = "jsvg" }
 
 # Ktor
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
