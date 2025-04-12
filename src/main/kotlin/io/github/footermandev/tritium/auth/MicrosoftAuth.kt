@@ -1,10 +1,12 @@
-package auth
+package io.github.footermandev.tritium.auth
 
-import auth.MicrosoftAuth.isSignedIn
 import com.microsoft.aad.msal4j.IAccount
 import com.microsoft.aad.msal4j.InteractiveRequestParameters
 import com.microsoft.aad.msal4j.SilentParameters
+import io.github.footermandev.tritium.auth.MicrosoftAuth.isSignedIn
+import io.github.footermandev.tritium.toURI
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
@@ -17,7 +19,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import toURI
+import java.io.File
 import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -233,6 +235,41 @@ object MicrosoftAuth {
         ProfileMngr.Cache.clear()
         logger.info("User signed out.")
     }
+
+    suspend fun getMinecraftVersions(): List<MCVersion?>? {
+        return try {
+            val response = httpClient.get("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
+            val body = response.bodyAsText()
+            logger.info("Successfully fetched MC version manifest.")
+
+            val manifest: VersionManifest = json.decodeFromString(body)
+
+            val releases = manifest.versions.filter { it.type == "release" }
+            logger.info("Filtered ${releases.size} release versions from the MC version manifest.")
+            releases
+        } catch (e: Exception) {
+            logger.error("Error fetching Minecraft versions", e)
+            null
+        }
+    }
+
+    suspend fun downloadMinecraftVersion(version: MCVersion, destination: String): Boolean? {
+        return try {
+            logger.info("Downloading Minecraft '${version.id}' from ${version.url}")
+
+            val content: ByteArray = httpClient.get(version.url).body()
+
+            val file = File("$destination/${version.id}.jar")
+            file.parentFile.mkdirs()
+            file.writeBytes(content)
+            logger.info("Downloaded Minecraft '${version.id}' to ${file.absolutePath}")
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to download Minecraft ${version.id}", e)
+            false
+        }
+
+    }
 }
 
 @Serializable
@@ -290,4 +327,16 @@ data class MCAuthResponse(
     @SerialName("access_token") val accessToken: String,
     @SerialName("token_type") val tokenType: String,
     @SerialName("expires_in") val expiresIn: Int
+)
+
+@Serializable
+data class VersionManifest(
+    val versions: List<MCVersion>
+)
+
+@Serializable
+data class MCVersion(
+    val id: String,
+    val type: String,
+    val url: String
 )
