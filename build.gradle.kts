@@ -1,55 +1,61 @@
 plugins {
-    kotlin("multiplatform") version "2.0.21"
+    kotlin("jvm") version "2.1.20"
     kotlin("plugin.serialization") version "2.0.21"
+    id("com.google.devtools.ksp") version "2.1.20-1.0.32"
+    idea
 }
 
-group = "io.github.footerman"
+ksp { arg("verbose", "true") }
+
+group = "io.github.footermandev.tritium"
 version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
 }
+dependencies {
+    // Kotlin standard library
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlin.scripting.jvm)
+    implementation(libs.kotlin.scripting.common)
+    implementation(libs.kotlin.scripting.host)
+    implementation(libs.kotlin.scripting.compiler.embeddable)
 
-kotlin {
-    jvm("desktop") {
-        withJava()
-    }
+    // KSP
+    ksp(libs.autoservice.ksp)
+    implementation(libs.autoservice.annotations)
 
-    sourceSets {
-        val desktopMain by getting
+    // FlatLaf
+    implementation(libs.flatlaf)
+    implementation(libs.flatlaf.extras)
+    implementation(libs.jsvg)
 
-        commonMain.dependencies {
-            implementation(libs.kotlin.stdlib.common)
-        }
-        desktopMain.dependencies {
-            // Kotlin standard library
-            implementation(libs.kotlin.stdlib.jdk8)
+    // Ktor
+    val ktor = libs.ktor
+    implementation(ktor.client.core)
+    implementation(ktor.client.cio)
+    implementation(ktor.client.auth)
+    implementation(ktor.client.json)
+    implementation(ktor.client.logging)
+    implementation(ktor.client.content.negotiation)
+    implementation(ktor.client.serialization)
+    implementation(ktor.serialization.kotlinx.json)
 
-            // FlatLaf
-            implementation(libs.flatlaf)
-            implementation(libs.flatlaf.extras)
+    // Toml serialization
+    val kToml = libs.ktoml
+    implementation(kToml.core)
+    implementation(kToml.file)
 
-            // Ktor
-            val ktor = libs.ktor
-            implementation(ktor.client.core)
-            implementation(ktor.client.cio)
-            implementation(ktor.client.auth)
-            implementation(ktor.client.json)
-            implementation(ktor.client.logging)
-            implementation(ktor.client.content.negotiation)
-            implementation(ktor.client.serialization)
-            implementation(ktor.serialization.kotlinx.json)
+    // MSAL4j
+    implementation(libs.msal4j)
 
-            // Toml serialization
-            val kToml = libs.ktoml
-            implementation(kToml.core)
-            implementation(kToml.file)
+    // Logback
+    implementation(libs.logback.classic)
+}
 
-            // MSAL4j
-            implementation(libs.msal4j)
-
-            // Logback
-            implementation(libs.logback.classic)
-        }
+idea {
+    module {
+        sourceDirs = sourceDirs + file("build/generated/ksp/main/kotlin")
+        generatedSourceDirs = generatedSourceDirs + file("build/generated/ksp/main/kotlin")
     }
 }
