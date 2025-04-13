@@ -1,7 +1,7 @@
 package io.github.footermandev.tritium.ui.components
 
 import io.github.footermandev.tritium.toRadians
-import io.github.footermandev.tritium.ui.icons.TRIcons
+import io.github.footermandev.tritium.ui.theme.TIcons
 import java.awt.*
 import javax.swing.JComponent
 import javax.swing.Timer
@@ -10,8 +10,8 @@ class TritiumLoadingIcon(private val size: Int = 32) : JComponent() {
     private var progress = 0.0
     private var rotation = 0.0
     private val rotationSpeed = 2.0
-    private val darkIcon = TRIcons.DarkTritium.derive(size, size)
-    private val lightIcon = TRIcons.Tritium.derive(size, size)
+    private val darkIcon = TIcons.DarkTritium.derive(size, size)
+    private val lightIcon = TIcons.Tritium.derive(size, size)
     
     private val timer = Timer(16) { // ~60 FPS
         rotation = (rotation + rotationSpeed) % 360

@@ -3,7 +3,7 @@ package io.github.footermandev.tritium.ui.dashboard
 import io.github.footermandev.tritium.Constants
 import io.github.footermandev.tritium.dim
 import io.github.footermandev.tritium.sizedImg
-import io.github.footermandev.tritium.ui.icons.TRIcons
+import io.github.footermandev.tritium.ui.theme.TIcons
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Font
@@ -24,7 +24,7 @@ internal class About : JPanel() {
         background = bg
         alignmentX = CENTER_ALIGNMENT
 
-        val img = JLabel(sizedImg(TRIcons.TritiumPng.image, 25, 25))
+        val img = JLabel(sizedImg(TIcons.TritiumPng.image, 25, 25))
         val textPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = bg

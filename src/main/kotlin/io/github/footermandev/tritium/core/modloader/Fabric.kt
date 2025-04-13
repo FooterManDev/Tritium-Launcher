@@ -4,7 +4,7 @@ import com.google.auto.service.AutoService
 import io.github.footermandev.tritium.core.modloader.fabric.FabricLoaderVersion
 import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.toURI
-import io.github.footermandev.tritium.ui.icons.TRIcons
+import io.github.footermandev.tritium.ui.theme.TIcons
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -30,7 +30,7 @@ class Fabric : ModLoader() {
     override val repository: URI = "https://maven.fabricmc.net/net/fabricmc/fabric-loader".toURI()
     override val oldestVersion: String = "1.14"
     override val icon: ImageIcon
-        get() = TRIcons.Fabric
+        get() = TIcons.Fabric
 
     val dir = File(INSTALL_DIR, id)
     private val client = HttpClient(CIO) {

@@ -13,7 +13,7 @@ import io.github.footermandev.tritium.toPath
 import io.github.footermandev.tritium.ui.components.TFileChooserField
 import io.github.footermandev.tritium.ui.components.emptyBorder
 import io.github.footermandev.tritium.ui.components.insets
-import io.github.footermandev.tritium.ui.icons.TRIcons
+import io.github.footermandev.tritium.ui.theme.TIcons
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -124,7 +124,7 @@ class NewProjectFrame : JFrame() {
 
     init {
         title = "New Project"
-        iconImage = TRIcons.TritiumPng.image
+        iconImage = TIcons.TritiumPng.image
         defaultCloseOperation = DISPOSE_ON_CLOSE
 
         val panel = JPanel(GridBagLayout()).apply {

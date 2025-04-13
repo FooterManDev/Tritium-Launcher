@@ -6,7 +6,7 @@ import io.github.footermandev.tritium.core.ProjectMngr
 import io.github.footermandev.tritium.core.ProjectMngrListener
 import io.github.footermandev.tritium.dim
 import io.github.footermandev.tritium.logger
-import io.github.footermandev.tritium.ui.components.RoundedBorder
+import io.github.footermandev.tritium.ui.components.TRoundedBorder
 import io.github.footermandev.tritium.ui.components.addEach
 import io.github.footermandev.tritium.ui.components.emptyBorder
 import java.awt.BorderLayout
@@ -130,7 +130,7 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
                     logger.info("Listed {}", p.metadata.name)
                     val ui = ProjectUI(p).apply {
                         alignmentX = Component.LEFT_ALIGNMENT
-                        border = RoundedBorder(15)
+                        border = TRoundedBorder(15)
                         isOpaque = false
                         isFocusable = true
                     }

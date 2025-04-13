@@ -1,7 +1,7 @@
 package io.github.footermandev.tritium.ui.components
 
 import io.github.footermandev.tritium.dim
-import io.github.footermandev.tritium.ui.icons.TRIcons
+import io.github.footermandev.tritium.ui.theme.TIcons
 import java.awt.FlowLayout
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -11,7 +11,7 @@ class TFileChooserField(
     private val extensions: FileNameExtensionFilter? = null,
     initialText: String = "",
     columns: Int = 20,
-    buttonIcon: Icon? = TRIcons.OpenFile
+    buttonIcon: Icon? = TIcons.OpenFile
 ): JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)) {
 
     val field = JTextField(initialText, columns)
