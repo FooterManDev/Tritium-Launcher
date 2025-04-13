@@ -1,12 +1,13 @@
 package io.github.footermandev.tritium.ui.dashboard
 
 import io.github.footermandev.tritium.dim
-import io.github.footermandev.tritium.ui.icons.TRIcons
+import io.github.footermandev.tritium.ui.theme.TColors
+import io.github.footermandev.tritium.ui.theme.TIcons
 import org.slf4j.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.CardLayout
+import java.awt.Color
 import java.awt.Component
-import java.awt.Dimension
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.*
@@ -24,12 +25,17 @@ class Dashboard : JFrame() {
     private val leftPanelBg = UIManager.getColor("Panel.background").darker()
     private val rightPanelBg = UIManager.getColor("Panel.background")
 
+    private var selected: JButton? = null
+    private val selectedBG = TColors.accent
+
     init {
         layout = BorderLayout()
         title = "Tritium"
         defaultCloseOperation = DO_NOTHING_ON_CLOSE
-        size = Dimension(650, 500)
-        iconImage = TRIcons.TritiumPng.image
+        size = dim(650, 500)
+        maximumSize = dim(650, 500)
+        isResizable = false
+        iconImage = TIcons.TritiumPng.image
         setLocationRelativeTo(null) // Opens at the center of the screen
         addWindowListener(object : WindowAdapter() {
             override fun windowClosing(e: WindowEvent?) {
@@ -53,37 +59,27 @@ class Dashboard : JFrame() {
         }
         splitPane.leftComponent = leftPanel
 
-        // TODO: Add localization
-        val btnBg = UIManager.getColor("Button.background")
-        val projectsNavBtn = JButton("Projects").apply {
-            addActionListener {
-                cardLayout.show(rightPanel, "projects")
-            }
-            addPropertyChangeListener {
-                background = if (isSelected) {
-                    btnBg.darker()
-                } else btnBg
-            }
+
+        val projectsNavBtn = createNavBtn("Projects")
+        val accountNavBtn = createNavBtn("Account")
+        val settingsNavBtn = createNavBtn("Settings")
+
+        selected = projectsNavBtn
+        updateBtnAppearance(projectsNavBtn, true)
+
+        projectsNavBtn.addActionListener {
+            updateSelectedBtn(projectsNavBtn)
+            cardLayout.show(rightPanel, "projects")
         }
-        val accountNavBtn = JButton("Account").apply {
-            addActionListener {
-                cardLayout.show(rightPanel, "account")
-            }
-            addPropertyChangeListener {
-                background = if (isSelected) {
-                    btnBg.darker()
-                } else btnBg
-            }
+
+        accountNavBtn.addActionListener {
+            updateSelectedBtn(accountNavBtn)
+            cardLayout.show(rightPanel, "account")
         }
-        val settingsNavBtn = JButton("Settings").apply {
-            addActionListener {
-                cardLayout.show(rightPanel, "settings")
-            }
-            addPropertyChangeListener {
-                background = if (isSelected) {
-                    btnBg.darker()
-                } else btnBg
-            }
+
+        settingsNavBtn.addActionListener {
+            updateSelectedBtn(settingsNavBtn)
+            cardLayout.show(rightPanel, "settings")
         }
 
         val navPanel = JPanel().apply {
@@ -121,6 +117,31 @@ class Dashboard : JFrame() {
         rightPanel.add(SettingsPanel(), "settings")
 
         isVisible = true
+    }
+
+    private fun createNavBtn(label: String): JButton {
+        return JButton(label).apply {
+            isContentAreaFilled = false
+            isBorderPainted = false
+            isFocusPainted = false
+            foreground = Color.WHITE
+            horizontalAlignment = SwingConstants.LEFT
+        }
+    }
+
+    private fun updateSelectedBtn(new: JButton) {
+        selected?.let { updateBtnAppearance(it, false) }
+        updateBtnAppearance(new, true)
+        selected = new
+    }
+
+    private fun updateBtnAppearance(btn: JButton, isSelected: Boolean) {
+        if(isSelected) {
+            btn.isContentAreaFilled = true
+            btn.background = selectedBG
+        } else {
+            btn.isContentAreaFilled = false
+        }
     }
 
     // TODO
