@@ -4,9 +4,9 @@ import io.github.footermandev.tritium.Constants
 import io.github.footermandev.tritium.auth.MCProfile
 import io.github.footermandev.tritium.auth.MicrosoftAuth
 import io.github.footermandev.tritium.auth.ProfileMngr
-import io.github.footermandev.tritium.insets
 import io.github.footermandev.tritium.loadImage
 import io.github.footermandev.tritium.logger
+import io.github.footermandev.tritium.ui.components.insets
 import kotlinx.coroutines.*
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -54,7 +54,7 @@ internal class AccountPanel() : JPanel() {
             btn.addActionListener {
                 logger.info("Sign in button clicked")
                 GlobalScope.launch(Dispatchers.IO) {
-                    MicrosoftAuth.newSignIn { _ ->
+                    MicrosoftAuth().newSignIn { _ ->
                         SwingUtilities.invokeLater {
                             logger.info("Sign-in callback received.")
                             isLoading = false
@@ -105,7 +105,7 @@ internal class AccountPanel() : JPanel() {
 
             val signOutBtn = JButton("Sign out").apply {
                 addActionListener {
-                    MicrosoftAuth.signOut()
+                    MicrosoftAuth().signOut()
                     isLoading = false
                     refreshUI()
                 }
