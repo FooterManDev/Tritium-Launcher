@@ -150,7 +150,8 @@ object ProjectMngr {
 
         val tempDir = createTempDirectory("tritium_project_${name}_temp").toFile()
         try {
-            var iconPath = icon
+            var iconPath: Path
+            val iconExtension = icon.fileName.toString().substringAfterLast(".", "")
 
             if (copyIconIntoProject == true) {
                 try {
@@ -159,7 +160,7 @@ object ProjectMngr {
                     logger.info("Copied icon to temporary location: {}", iconPath)
 
                     if (renameIconIfCopy == true) {
-                        val newIconPath = tempDir.toPath().resolve("icon")
+                        val newIconPath = tempDir.toPath().resolve("icon${if (iconExtension.isNotEmpty()) ".$iconExtension" else ""}")
                         Files.move(copiedIcon, newIconPath, StandardCopyOption.REPLACE_EXISTING)
                         iconPath = newIconPath
                         logger.info("Renamed icon to: {}", iconPath)
@@ -177,9 +178,8 @@ object ProjectMngr {
                 path = finalDir.path,
                 icon = if (copyIconIntoProject == true) {
                     // Store path relative to project directory
-                    if (renameIconIfCopy == true) "icon" else icon.fileName.toString()
+                    if (renameIconIfCopy == true) "icon${if (iconExtension.isNotEmpty()) ".$iconExtension" else ""}" else icon.fileName.toString()
                 } else {
-                    // Store absolute path if icon is external
                     icon.toAbsolutePath().toString()
                 },
                 version = "",
@@ -207,7 +207,7 @@ object ProjectMngr {
 
             if (createChangelogFile != null) {
                 try {
-                    val changelogFile = File(tempDir, createChangelogFile.fileName + createChangelogFile.type)
+                    val changelogFile = File(tempDir, createChangelogFile.fileName + "." + createChangelogFile.type)
                     changelogFile.createNewFile()
                     logger.info("Created changelog: {}", changelogFile.name)
                 } catch (e: Exception) {
