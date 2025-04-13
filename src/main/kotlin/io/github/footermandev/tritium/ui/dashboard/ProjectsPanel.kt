@@ -1,14 +1,14 @@
 package io.github.footermandev.tritium.ui.dashboard
 
-import io.github.footermandev.tritium.addEach
 import io.github.footermandev.tritium.core.Project
 import io.github.footermandev.tritium.core.ProjectDirWatcher
 import io.github.footermandev.tritium.core.ProjectMngr
 import io.github.footermandev.tritium.core.ProjectMngrListener
 import io.github.footermandev.tritium.dim
-import io.github.footermandev.tritium.emptyBorder
 import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.ui.components.RoundedBorder
+import io.github.footermandev.tritium.ui.components.addEach
+import io.github.footermandev.tritium.ui.components.emptyBorder
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.GridLayout
@@ -55,11 +55,15 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
         val importProject = JButton("Import Project").apply {
             margin = Insets(10, 20, 10, 20)
             preferredSize = dim(0, 40)
+            isEnabled = false
+            background = background.darker()
         }
 
         val cloneFromGit = JButton("Clone from Git").apply {
             margin = Insets(10, 20, 10, 20)
             preferredSize = dim(0, 40)
+            isEnabled = false
+            background = background.darker()
         }
 
         btnsContainer.addEach(newProject, importProject, cloneFromGit)
@@ -67,6 +71,7 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
 
         add(btnPanel, BorderLayout.NORTH)
 
+        //TODO: Add sorting; Add layouts
         projectsList = JScrollPane().apply {
             horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
             verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER
@@ -110,6 +115,7 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
             val updatedProjects = ProjectMngr.refreshProjects()
             projectsPanel.removeAll()
 
+            projectsPanel.isFocusCycleRoot = true
             projectsPanel.border = emptyBorder(20)
 
             if(updatedProjects.isEmpty()) {
@@ -122,13 +128,14 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
 
                 updatedProjects.forEach { p ->
                     logger.info("Listed {}", p.metadata.name)
-                    val ui = ProjectUI(p)
-                    ui.alignmentX = Component.LEFT_ALIGNMENT
-                    ui.border = RoundedBorder(15)
-                    ui.isOpaque = false
+                    val ui = ProjectUI(p).apply {
+                        alignmentX = Component.LEFT_ALIGNMENT
+                        border = RoundedBorder(15)
+                        isOpaque = false
+                        isFocusable = true
+                    }
 
                     projectsPanel.add(ui)
-
                     projectsPanel.add(Box.createRigidArea(dim(0,10)))
                 }
                 if(projectsPanel.componentCount > 0) projectsPanel.remove(projectsPanel.componentCount - 1)

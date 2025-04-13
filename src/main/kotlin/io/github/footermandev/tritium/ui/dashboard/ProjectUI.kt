@@ -3,7 +3,10 @@ package io.github.footermandev.tritium.ui.dashboard
 import io.github.footermandev.tritium.*
 import io.github.footermandev.tritium.core.Project
 import io.github.footermandev.tritium.ui.components.RoundedBorder
+import io.github.footermandev.tritium.ui.components.scale
 import java.awt.*
+import java.awt.event.FocusEvent
+import java.awt.event.FocusListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
@@ -16,6 +19,7 @@ import javax.swing.border.EmptyBorder
 class ProjectUI(val project: Project) : JPanel() {
     private val meta = project.metadata
     private var hovered = false
+    private var selected = false
     var hoverColor: Color? = Color.LIGHT_GRAY
 
     init {
@@ -25,6 +29,7 @@ class ProjectUI(val project: Project) : JPanel() {
         preferredSize = dim(300, 80)
         minimumSize = dim(200, 80)
         alignmentX = Component.LEFT_ALIGNMENT
+        isFocusable = true
 
         val gbc = GridBagConstraints().apply {
             insets = Insets(0, 5, 0, 5)
@@ -59,8 +64,7 @@ class ProjectUI(val project: Project) : JPanel() {
         add(title, gbc)
 
         val path = JLabel(meta.path.shortenHome()).apply {
-
-            font = font.deriveFont(font.size2D * 0.8f)
+            font = font.scale(0.8f)
         }
         gbc.gridx = 1
         gbc.gridy = 1
@@ -90,6 +94,9 @@ class ProjectUI(val project: Project) : JPanel() {
 
         addMouseListener(object : MouseAdapter() {
             override fun mouseEntered(e: MouseEvent?) {
+                if(!isFocusOwner) {
+                    requestFocusInWindow()
+                }
                 hovered = true
                 repaint()
             }
@@ -103,11 +110,23 @@ class ProjectUI(val project: Project) : JPanel() {
                 super.mouseClicked(e)
             }
         })
+
+        addFocusListener(object : FocusListener {
+            override fun focusGained(e: FocusEvent?) {
+                selected = true
+                repaint()
+            }
+            override fun focusLost(e: FocusEvent?) {
+                selected = false
+                hovered = false
+                repaint()
+            }
+        })
     }
 
     override fun paint(g: Graphics) {
         super.paint(g)
-        if(hovered) {
+        if(hovered || selected) {
             val g2 = g.create() as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
