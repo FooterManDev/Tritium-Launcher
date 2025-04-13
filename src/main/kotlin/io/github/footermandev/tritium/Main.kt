@@ -63,7 +63,7 @@ private fun attemptAutoSignIn() {
                 val result = MSAL.app.acquireTokenSilently(params).await()
 
                 mainLogger.info("Silent sign-in succeeded.")
-                val mcToken = MicrosoftAuth.getMCToken(result.accessToken())
+                val mcToken = MicrosoftAuth().getMCToken(result.accessToken())
                 ProfileMngr.Cache.init(mcToken)
             } else {
                 mainLogger.info("No accounts available.")
