@@ -2,8 +2,9 @@ package io.github.footermandev.tritium.ui.dashboard
 
 import io.github.footermandev.tritium.*
 import io.github.footermandev.tritium.core.Project
-import io.github.footermandev.tritium.ui.components.RoundedBorder
+import io.github.footermandev.tritium.ui.components.TRoundedBorder
 import io.github.footermandev.tritium.ui.components.scale
+import io.github.footermandev.tritium.ui.theme.TColors.accent
 import java.awt.*
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
@@ -20,7 +21,7 @@ class ProjectUI(val project: Project) : JPanel() {
     private val meta = project.metadata
     private var hovered = false
     private var selected = false
-    var hoverColor: Color? = Color.LIGHT_GRAY
+    var hoverColor: Color? = accent
 
     init {
         layout = GridBagLayout()
@@ -125,18 +126,18 @@ class ProjectUI(val project: Project) : JPanel() {
     }
 
     override fun paint(g: Graphics) {
-        super.paint(g)
         if(hovered || selected) {
             val g2 = g.create() as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
 
-            val roundRadius = (border as? RoundedBorder)?.radius ?: 0
+            val roundRadius = (border as? TRoundedBorder)?.radius ?: 0
 
-            g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f)
+            g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f)
             g2.color = hoverColor
             g2.fillRoundRect(0,0, width - 1, height - 1, roundRadius, roundRadius)
             g2.dispose()
         }
+        super.paint(g)
     }
 }
