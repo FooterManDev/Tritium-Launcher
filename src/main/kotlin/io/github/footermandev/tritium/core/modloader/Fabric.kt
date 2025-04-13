@@ -2,6 +2,7 @@ package io.github.footermandev.tritium.core.modloader
 
 import com.google.auto.service.AutoService
 import io.github.footermandev.tritium.core.modloader.fabric.FabricLoaderVersion
+import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.toURI
 import io.github.footermandev.tritium.ui.icons.TRIcons
 import io.ktor.client.*
@@ -14,7 +15,6 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
 import javax.swing.ImageIcon
@@ -36,7 +36,7 @@ class Fabric : ModLoader() {
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     }
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = logger()
 
     init {
         register(this)

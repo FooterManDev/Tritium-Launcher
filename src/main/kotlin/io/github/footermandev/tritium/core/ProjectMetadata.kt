@@ -2,10 +2,10 @@ package io.github.footermandev.tritium.core
 
 import com.akuleshov7.ktoml.exceptions.TomlEncodingException
 import io.github.footermandev.tritium.core.mod.Mod
+import io.github.footermandev.tritium.logger
 import kotlinx.io.IOException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.slf4j.LoggerFactory
 import java.io.File
 
 @Serializable
@@ -50,7 +50,7 @@ data class ProjectMetadata(
     var titleColor: String?
 ) {
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val logger = logger()
 
         fun generateFile(metadata: ProjectMetadata, path: File): Boolean {
             val fileName = "trmeta.json"

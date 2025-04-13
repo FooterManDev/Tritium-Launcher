@@ -5,9 +5,9 @@ import com.akuleshov7.ktoml.exceptions.TomlDecodingException
 import io.github.footermandev.tritium.core.modloader.ModLoader
 import io.github.footermandev.tritium.core.modpack.ModpackType
 import io.github.footermandev.tritium.fromTR
+import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.toPath
 import kotlinx.serialization.json.Json
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
@@ -21,7 +21,7 @@ import kotlin.io.path.name
 import kotlin.io.path.pathString
 
 object ProjectMngr {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = logger()
     private val listeners = mutableListOf<ProjectMngrListener>()
     private val _projects = mutableListOf<Project>()
     val projects: List<Project>

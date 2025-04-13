@@ -6,8 +6,8 @@ import io.github.footermandev.tritium.auth.MicrosoftAuth
 import io.github.footermandev.tritium.auth.ProfileMngr
 import io.github.footermandev.tritium.insets
 import io.github.footermandev.tritium.loadImage
+import io.github.footermandev.tritium.logger
 import kotlinx.coroutines.*
-import org.slf4j.LoggerFactory
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.*
@@ -19,7 +19,7 @@ import javax.swing.*
  */
 @OptIn(DelicateCoroutinesApi::class)
 internal class AccountPanel() : JPanel() {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = logger()
     @Volatile private var isLoading: Boolean = true
 
     init {

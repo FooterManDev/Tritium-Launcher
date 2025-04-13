@@ -4,6 +4,7 @@ import com.microsoft.aad.msal4j.IAccount
 import com.microsoft.aad.msal4j.InteractiveRequestParameters
 import com.microsoft.aad.msal4j.SilentParameters
 import io.github.footermandev.tritium.auth.MicrosoftAuth.isSignedIn
+import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.toURI
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -18,7 +19,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.resume
@@ -32,7 +32,7 @@ import kotlin.coroutines.resumeWithException
  * TODO: Clean up
  */
 object MicrosoftAuth {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = logger()
 
     private val json = Json { ignoreUnknownKeys = true }
 

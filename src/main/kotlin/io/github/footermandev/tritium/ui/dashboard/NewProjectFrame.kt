@@ -1,22 +1,18 @@
 package io.github.footermandev.tritium.ui.dashboard
 
+import io.github.footermandev.tritium.*
 import io.github.footermandev.tritium.auth.MicrosoftAuth
-import io.github.footermandev.tritium.compareMCVersions
 import io.github.footermandev.tritium.core.ChangelogFileSpec
 import io.github.footermandev.tritium.core.Project
 import io.github.footermandev.tritium.core.ProjectMngr
 import io.github.footermandev.tritium.core.ProjectMngrListener
 import io.github.footermandev.tritium.core.modloader.ModLoader
 import io.github.footermandev.tritium.core.modpack.ModpackType
-import io.github.footermandev.tritium.emptyBorder
-import io.github.footermandev.tritium.insets
-import io.github.footermandev.tritium.toPath
 import io.github.footermandev.tritium.ui.elements.TFileChooserField
 import io.github.footermandev.tritium.ui.icons.TRIcons
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.slf4j.LoggerFactory
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.GridBagConstraints
@@ -28,7 +24,7 @@ import javax.swing.border.EmptyBorder
 import javax.swing.filechooser.FileNameExtensionFilter
 
 class NewProjectFrame : JFrame() {
-    private val logger = LoggerFactory.getLogger(NewProjectFrame::class.java)
+    private val logger = logger()
 
     val nameField = JTextField(30)
 

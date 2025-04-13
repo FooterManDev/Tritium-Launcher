@@ -1,5 +1,6 @@
 package io.github.footermandev.tritium.auth
 
+import io.github.footermandev.tritium.logger
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -15,7 +16,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import org.slf4j.LoggerFactory
 import java.io.File
 
 @Serializable
@@ -77,7 +77,7 @@ object ProfileMngr {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = logger()
 
     object Cache {
         private var msToken: String? = null
