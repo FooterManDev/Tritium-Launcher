@@ -1,14 +1,18 @@
 package io.github.footermandev.tritium.ui.dashboard
 
-import io.github.footermandev.tritium.*
 import io.github.footermandev.tritium.auth.MicrosoftAuth
+import io.github.footermandev.tritium.compareMCVersions
 import io.github.footermandev.tritium.core.ChangelogFileSpec
 import io.github.footermandev.tritium.core.Project
 import io.github.footermandev.tritium.core.ProjectMngr
 import io.github.footermandev.tritium.core.ProjectMngrListener
 import io.github.footermandev.tritium.core.modloader.ModLoader
 import io.github.footermandev.tritium.core.modpack.ModpackType
-import io.github.footermandev.tritium.ui.elements.TFileChooserField
+import io.github.footermandev.tritium.logger
+import io.github.footermandev.tritium.toPath
+import io.github.footermandev.tritium.ui.components.TFileChooserField
+import io.github.footermandev.tritium.ui.components.emptyBorder
+import io.github.footermandev.tritium.ui.components.insets
 import io.github.footermandev.tritium.ui.icons.TRIcons
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +39,7 @@ class NewProjectFrame : JFrame() {
 
     val mcVerField = JComboBox<String>().apply {
         CoroutineScope(Dispatchers.IO).launch {
-            val versions = MicrosoftAuth.getMinecraftVersions()
+            val versions = MicrosoftAuth().getMinecraftVersions()
             SwingUtilities.invokeLater {
                 versions?.forEach { v ->
                     addItem(v?.id)
