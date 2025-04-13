@@ -3,7 +3,6 @@ package io.github.footermandev.tritium
 import kotlinx.io.IOException
 import org.slf4j.LoggerFactory
 import java.awt.Color
-import java.awt.Component
 import java.awt.Image
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
@@ -11,7 +10,6 @@ import java.net.URI
 import java.net.URL
 import java.nio.file.Path
 import javax.imageio.ImageIO
-import javax.swing.JPanel
 import kotlin.math.PI
 
 private val logger = LoggerFactory.getLogger("ExtensionFunctions")
@@ -28,15 +26,32 @@ fun String.toURI(): URI {
     return URI(this)
 }
 
+//String to Path
+fun String.toPath(): Path {
+    return Path.of(this)
+}
+
+fun String.shortenHome(): String {
+    var index = -1
+    repeat(4) {
+        index = this.indexOf('/', index + 1)
+        if(index == -1) return this
+    }
+
+    return "~${this.substring(index)}"
+}
+
+fun String.parseColor(): Color {
+    return when {
+        this.startsWith("#") -> Color.decode(this)
+        this.startsWith("0x") -> Color.decode(this)
+        this.startsWith("0X") -> Color.decode(this)
+        !this.startsWith("#") || !this.startsWith("0x") || !this.startsWith("0X") -> Color.decode("#$this")
+        else -> Color.WHITE
+    }
+}
+
 fun Double.toRadians(): Double = this * (PI / 180.0)
-
-fun JPanel.addEach(vararg components: Component) {
-    components.forEach { add(it) }
-}
-
-fun JPanel.addEach(components: Array<out Component>, constraints: Any) {
-    components.forEach { add(it, constraints) }
-}
 
 fun Path.toImage(): Image? {
     if (!toFile().exists()) {
@@ -71,11 +86,6 @@ fun Path.mkdirs(): Boolean {
     return try { this.toFile().mkdirs() } catch (e: IOException) { logger.error("Error creating directory: {}", e.message, e); false}
 }
 
-//String to Path
-fun String.toPath(): Path {
-    return Path.of(this)
-}
-
 // Rescales an image to the target dimensions, using high quality interpolation.
 fun Image.getHighQualityScaledInstance(targetWidth: Int, targetHeight: Int): Image {
     val sourceW = getWidth(null)
@@ -98,24 +108,4 @@ fun Image.getHighQualityScaledInstance(targetWidth: Int, targetHeight: Int): Ima
     g2.drawImage(this, 0, 0, targetWidth, targetHeight, null)
     g2.dispose()
     return scaled
-}
-
-fun String.shortenHome(): String {
-    var index = -1
-    repeat(4) {
-        index = this.indexOf('/', index + 1)
-        if(index == -1) return this
-    }
-
-    return "~${this.substring(index)}"
-}
-
-fun String.parseColor(): Color {
-    return when {
-        this.startsWith("#") -> Color.decode(this)
-        this.startsWith("0x") -> Color.decode(this)
-        this.startsWith("0X") -> Color.decode(this)
-        !this.startsWith("#") || !this.startsWith("0x") || !this.startsWith("0X") -> Color.decode("#$this")
-        else -> Color.WHITE
-    }
 }

@@ -1,11 +1,11 @@
 package io.github.footermandev.tritium.ui.dashboard
 
 import io.github.footermandev.tritium.Constants
-import io.github.footermandev.tritium.addEach
 import io.github.footermandev.tritium.auth.ProfileMngr
 import io.github.footermandev.tritium.loadImage
 import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.ui.components.TritiumLoadingIcon
+import io.github.footermandev.tritium.ui.components.addEach
 import java.awt.Dimension
 import java.awt.Font
 import javax.swing.*

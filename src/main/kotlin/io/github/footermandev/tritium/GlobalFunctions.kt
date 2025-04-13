@@ -6,13 +6,11 @@ import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.*
-import java.awt.geom.RoundRectangle2D
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
 import javax.swing.ImageIcon
-import javax.swing.border.EmptyBorder
 
 private val logger = LoggerFactory.getLogger("GlobalFunctions") //TODO: Make a central io.github.footermandev.tritium.logger for things like this and others
 
@@ -173,28 +171,6 @@ fun loadImage(url: String, width: Int? = null, height: Int? = null, border: Bool
         logger.error("Error loading image: ${e.message}", e)
         return null
     }
-}
-
-/**
- * Simplifies the [Insets] constructor.
- */
-fun insets(all: Int) = Insets(all, all, all, all)
-
-/**
- * Simplifies the [javax.swing.border.EmptyBorder] constructor
- */
-fun emptyBorder(all: Int) = EmptyBorder(all, all, all, all)
-
-fun roundImage(image: Image, radius: Int): BufferedImage {
-    val w = image.getWidth(null)
-    val h = image.getHeight(null)
-    val img = BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
-    val g2d = img.createGraphics()
-    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-    g2d.clip = RoundRectangle2D.Double(0.0, 0.0, w.toDouble(), h.toDouble(), radius.toDouble(), radius.toDouble())
-    g2d.drawImage(image, 0, 0, null)
-    g2d.dispose()
-    return img
 }
 
 /**

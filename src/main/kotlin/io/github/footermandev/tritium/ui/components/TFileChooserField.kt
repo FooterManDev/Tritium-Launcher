@@ -1,4 +1,4 @@
-package io.github.footermandev.tritium.ui.elements
+package io.github.footermandev.tritium.ui.components
 
 import io.github.footermandev.tritium.dim
 import io.github.footermandev.tritium.ui.icons.TRIcons
