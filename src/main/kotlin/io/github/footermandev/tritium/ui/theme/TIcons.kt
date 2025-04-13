@@ -1,9 +1,9 @@
-package io.github.footermandev.tritium.ui.icons
+package io.github.footermandev.tritium.ui.theme
 
 import com.formdev.flatlaf.extras.FlatSVGIcon
 import javax.swing.ImageIcon
 
-object TRIcons {
+object TIcons {
     val Tritium = FlatSVGIcon("icons/tritium.svg")
     val TritiumPng = ImageIcon(javaClass.classLoader.getResource("icons/tritium.png"))
 
