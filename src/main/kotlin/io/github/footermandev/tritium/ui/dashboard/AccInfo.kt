@@ -6,6 +6,7 @@ import io.github.footermandev.tritium.loadImage
 import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.ui.components.TritiumLoadingIcon
 import io.github.footermandev.tritium.ui.components.addEach
+import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
 import javax.swing.*
@@ -61,6 +62,7 @@ internal class AccInfo : JPanel() {
                     }
                     val name = JLabel(p.name).apply { 
                         font = Font("Arial", Font.BOLD, 10)
+                        foreground = Color.WHITE
                         alignmentX = CENTER_ALIGNMENT
                         preferredSize = Dimension(75, 15)
                         horizontalAlignment = SwingConstants.CENTER

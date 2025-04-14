@@ -31,6 +31,7 @@ internal class About : JPanel() {
         }
         val title = JLabel(Constants.TR).apply {
             font = Font("Arial", Font.BOLD, 12)
+            foreground = Color.WHITE
         }
         // TODO: This is a placeholder, using a text file.
         val version = JLabel(javaClass.classLoader.getResource("version.txt")?.readText().orEmpty()).apply {

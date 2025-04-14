@@ -9,10 +9,7 @@ import io.github.footermandev.tritium.logger
 import io.github.footermandev.tritium.ui.components.TRoundedBorder
 import io.github.footermandev.tritium.ui.components.addEach
 import io.github.footermandev.tritium.ui.components.emptyBorder
-import java.awt.BorderLayout
-import java.awt.Component
-import java.awt.GridLayout
-import java.awt.Insets
+import java.awt.*
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 
@@ -46,6 +43,7 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
         val newProject = JButton("New Project").apply {
             margin = Insets(10, 20, 10, 20)
             preferredSize = dim(0, 40)
+            foreground = Color.WHITE
 
             addActionListener {
                 val newProject = NewProjectFrame()
@@ -55,6 +53,7 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
         val importProject = JButton("Import Project").apply {
             margin = Insets(10, 20, 10, 20)
             preferredSize = dim(0, 40)
+            foreground = Color.WHITE
             isEnabled = false
             background = background.darker()
         }
@@ -62,6 +61,7 @@ class ProjectsPanel : JPanel(), ProjectMngrListener {
         val cloneFromGit = JButton("Clone from Git").apply {
             margin = Insets(10, 20, 10, 20)
             preferredSize = dim(0, 40)
+            foreground = Color.WHITE
             isEnabled = false
             background = background.darker()
         }

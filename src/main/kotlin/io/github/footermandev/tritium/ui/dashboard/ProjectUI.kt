@@ -133,7 +133,7 @@ class ProjectUI(val project: Project) : JPanel() {
 
             val roundRadius = (border as? TRoundedBorder)?.radius ?: 0
 
-            g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f)
+            g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.85f)
             g2.color = hoverColor
             g2.fillRoundRect(0,0, width - 1, height - 1, roundRadius, roundRadius)
             g2.dispose()
