@@ -4,7 +4,7 @@ flatlaf = "3.5.3"
 jsvg = "1.7.0"
 ktor = "3.0.3"
 ktoml = "0.5.1"
-msal = "1.19.0"
+msal = "1.20.1"
 logback = "1.5.16"
 ksp = "2.1.20-1.0.31"
 autoservice = "1.1.1"
@@ -13,6 +13,7 @@ autoservice-ksp = "1.2.0"
 [libraries]
 # Kotlin
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlin-scripting-jvm = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm", version.ref = "kotlin" }
 kotlin-scripting-common = { module = "org.jetbrains.kotlin:kotlin-scripting-common", version.ref = "kotlin" }
 kotlin-scripting-host = { module = "org.jetbrains.kotlin:kotlin-scripting-jvm-host", version.ref = "kotlin" }

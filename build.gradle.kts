@@ -51,6 +51,7 @@ dependencies {
 
     // Logback
     implementation(libs.logback.classic)
+    implementation(libs.kotlin.reflect)
 }
 
 idea {
