@@ -58,7 +58,19 @@ fun fromTR(child: String = ""): File {
 fun userHome(): String {
     return getProperty("user.home")
 }
-val userHome = userHome()
+val userHome get() = userHome()
+
+/**
+ * Returns the Tritium directory
+ */
+fun trHome(): String = fromTR("").absolutePath
+val trHome get() = trHome()
+
+/**
+ * Returns the XDG Config Home directory
+ */
+fun xdgConfigHome(): String? = getEnv("XDG_CONFIG_HOME")
+val xdgConfigHome get() = xdgConfigHome()
 
 /**
  * Returns the OS name
@@ -66,7 +78,7 @@ val userHome = userHome()
 fun osName(): String {
     return getProperty("os.name").lowercase()
 }
-val osName = osName()
+val osName get() = osName()
 
 /**
  * Sends a system notification using Java's SystemTray

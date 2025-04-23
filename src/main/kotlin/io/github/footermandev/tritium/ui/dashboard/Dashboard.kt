@@ -20,8 +20,8 @@ private val logger = LoggerFactory.getLogger(Dashboard::class.java)
  * TODO: Opened if there are no projects, an active project was deleted, or on first launch.
  */
 class Dashboard : JFrame() {
-    private lateinit var cardLayout: CardLayout
-    private lateinit var rightPanel: JPanel
+    private var cardLayout: CardLayout
+    private var rightPanel: JPanel
     private val leftPanelBg = UIManager.getColor("Panel.background").darker()
     private val rightPanelBg = UIManager.getColor("Panel.background")
 
@@ -114,7 +114,8 @@ class Dashboard : JFrame() {
 
         rightPanel.add(ProjectsPanel(), "projects")
         rightPanel.add(AccountPanel(), "account")
-        rightPanel.add(SettingsPanel(), "settings")
+        // TODO: Add settings panel
+        //  rightPanel.add(SettingsPanel(), "settings")
 
         isVisible = true
     }
@@ -143,7 +144,4 @@ class Dashboard : JFrame() {
             btn.isContentAreaFilled = false
         }
     }
-
-    // TODO
-    class SettingsPanel : JPanel() {}
 }
