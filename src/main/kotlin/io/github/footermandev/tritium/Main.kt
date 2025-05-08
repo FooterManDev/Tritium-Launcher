@@ -6,8 +6,13 @@ import com.microsoft.aad.msal4j.SilentParameters
 import io.github.footermandev.tritium.auth.MSAL
 import io.github.footermandev.tritium.auth.MicrosoftAuth
 import io.github.footermandev.tritium.auth.ProfileMngr
+import io.github.footermandev.tritium.core.Project
 import io.github.footermandev.tritium.core.ProjectMngr
+import io.github.footermandev.tritium.core.ProjectMngrListener
+import io.github.footermandev.tritium.keymap.KeymapService
 import io.github.footermandev.tritium.ui.dashboard.Dashboard
+import io.github.footermandev.tritium.ui.project.ProjectFrame
+import io.github.footermandev.tritium.ui.theme.TIcons
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.future.await
@@ -22,33 +27,35 @@ val mainLogger: Logger = LoggerFactory.getLogger(Constants.TR + "::Main")
 fun main(args: Array<String>) {
     mainLogger.info("Starting with args: ${args.joinToString(" ")}")
 
+    // Start the MSAL process
     attemptAutoSignIn()
 
+    // Set up FlatLaf stuff
     flatLaf()
 
-    SwingUtilities.invokeLater {
-        if(ProjectMngr.activeProject != null) {
-            mainLogger.info("Loading active project.")
-            ProjectMngr.loadActiveProject()
-        } else {
-            mainLogger.info("Opening Dashboard, no active project.")
-            Dashboard().isVisible = true
+    // Set up keyboard stuff
+    KeymapService.init()
+
+    ProjectMngr.addListener(object : ProjectMngrListener {
+        override fun onProjectCreated(project: Project) {}
+        override fun onProjectOpened(project: Project) {
+            ProjectFrame(project)
         }
-    }
-}
+        override fun onProjectDeleted(project: Project) {}
+        override fun onProjectUpdated(project: Project) {}
+        override fun onProjectFinishedLoading(projects: List<Project>) {}
+        override fun onProjectFailedToGenerate(
+            project: String,
+            errorMsg: String,
+            exception: Exception?
+        ) {}
+    })
 
-fun flatLaf() {
+    ProjectMngr.loadActiveProject()
 
-    if(SystemInfo.isLinux) {
-        UIManager.put("TitlePane.showIcon", false)
-        UIManager.put("TitlePane.titleText", "")
+    SwingUtilities.invokeLater {
+        if(ProjectMngr.activeProject == null) Dashboard()
     }
-    if(SystemInfo.isMacOS) {
-        System.setProperty("apple.laf.useScreenMenuBar", "true")
-    }
-    UIManager.put("Component.hideMnemonics", false)
-
-    FlatDarkLaf.setup()
 }
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -74,4 +81,18 @@ private fun attemptAutoSignIn() {
             throw e
         }
     }
+}
+
+fun flatLaf() {
+    if(SystemInfo.isMacOS) {
+        System.setProperty("apple.laf.useScreenMenuBar", "true")
+    }
+    UIManager.put("Component.hideMnemonics", false)
+
+    FlatDarkLaf.setup()
+
+    UIManager.put("TitlePane.closeIcon", TIcons.WindowIcons.Close)
+    UIManager.put("TitlePane.iconifyIcon", TIcons.WindowIcons.Iconify)
+    UIManager.put("TitlePane.maximizeIcon", TIcons.WindowIcons.RestoreMax)
+    UIManager.put("TitlePane.restoreIcon", TIcons.WindowIcons.RestoreMin)
 }
